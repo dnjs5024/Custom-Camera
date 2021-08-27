@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "707394349186",
+    "project_id": "camera-exam",
+    "storage_bucket": "camera-exam.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:707394349186:android:dc775065ba06326afb6c9b",
+        "android_client_info": {
+          "package_name": "com.example.camera_exam"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "707394349186-gevqak107r9bqilkvlrmk1t2gpi5kpoi.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBKXpzjm_qPBGwKNaU3pYL0qdse9LxhyWc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "707394349186-gevqak107r9bqilkvlrmk1t2gpi5kpoi.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
