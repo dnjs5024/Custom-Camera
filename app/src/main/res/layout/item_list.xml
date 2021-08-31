@@ -6,12 +6,23 @@
     android:layout_margin="5dp"
     android:orientation="vertical"
     >
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
     <ImageView
         android:id="@+id/iv_profile"
         android:layout_width="80dp"
         android:layout_height="80dp"
         android:src="@mipmap/ic_launcher"
         />
+    <CheckBox
+        android:id="@+id/cb_delete"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="right"
+        android:visibility="invisible"
+        />
+    </FrameLayout>
     <TextView
         android:id="@+id/tv_title"
         android:layout_width="match_parent"
