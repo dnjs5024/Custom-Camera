@@ -1,12 +1,16 @@
 package com.example.camera_exam;
 
 import android.content.Context;
+import android.content.Intent;
+import android.provider.MediaStore;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.CheckBox;
 import android.widget.ImageView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
@@ -20,6 +24,7 @@ public class MainAdapter extends RecyclerView.Adapter<MainAdapter.CustomViewHold
 
     private List<MainData> arrayList;
     private Context context;
+    private  int cb_id = 10000;
 
     public MainAdapter(List<MainData> arrayList,Context context) {
         this.arrayList = arrayList;
@@ -38,8 +43,19 @@ public class MainAdapter extends RecyclerView.Adapter<MainAdapter.CustomViewHold
 
     @Override
     public void onBindViewHolder(@NonNull CustomViewHolder holder, int position) {
+        holder.checkBox.setId(10000+position);
+        holder.checkBox.setVisibility(View.INVISIBLE);
         holder.textView.setText(arrayList.get(position).getTv_title());
         Glide.with(holder.imageView).load(arrayList.get(position).getIv_profile()).into(holder.imageView);
+        String str = "aa"+holder.checkBox.getId();
+        holder.itemView.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Toast.makeText(context.getApplicationContext(),"촬영",Toast.LENGTH_SHORT).show();
+                    Intent intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+                    context.startActivity(intent);
+            }
+        });
 
     }
 
@@ -53,12 +69,14 @@ public class MainAdapter extends RecyclerView.Adapter<MainAdapter.CustomViewHold
 
         private TextView textView;
         private ImageView imageView;
+        private CheckBox checkBox;
 
         public CustomViewHolder(@NonNull View itemView) {
             super(itemView);
 
             textView = (TextView) itemView.findViewById(R.id.tv_title);
             imageView = (ImageView) itemView.findViewById(R.id.iv_profile);
+            checkBox = (CheckBox) itemView.findViewById(R.id.cb_delete);
 
         }
     }

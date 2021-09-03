@@ -5,14 +5,18 @@ public class MainData {
     private int iv_profile;
     private String tv_title;
 
+
     public MainData(){
 
     }
 
+
     public MainData(int iv_profile, String tv_title) {
         this.iv_profile = iv_profile;
         this.tv_title = tv_title;
+
     }
+
 
     public int getIv_profile() {
         return iv_profile;

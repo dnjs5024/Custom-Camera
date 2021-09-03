@@ -32,17 +32,16 @@
 
     </androidx.recyclerview.widget.RecyclerView>
 
-    <Button
-        android:id="@+id/btn_add"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="추가"
-        />
+
     <com.google.android.material.bottomnavigation.BottomNavigationView
+        android:id="@+id/bottomNavi"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:background="?attr/colorPrimary"
-        android:clipChildren="@andro"
+        app:menu="@menu/bottom_menu"
+        app:itemIconTint="@color/white"
+        app:itemTextColor="@color/black"
+        android:visibility="invisible"
         />
 
 
