@@ -18,6 +18,7 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import android.Manifest;
 import android.app.Activity;
+import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -83,21 +84,40 @@ public class MainActivity extends AppCompatActivity {
 
         //권한 체크
 
-        int permissionChecked = ContextCompat.checkSelfPermission(MainActivity.this, Manifest.permission.CAMERA);
+        String[] permissionChecked = {
+                Manifest.permission.CAMERA,
+                Manifest.permission.READ_EXTERNAL_STORAGE
+        };
+        int cameraPermission = ContextCompat.checkSelfPermission(MainActivity.this, permissionChecked[0]);
+        int readPermission = ContextCompat.checkSelfPermission(MainActivity.this, permissionChecked[1]);
 
-        if(permissionChecked == PackageManager.PERMISSION_GRANTED){
+        if(cameraPermission== PackageManager.PERMISSION_GRANTED && readPermission == PackageManager.PERMISSION_GRANTED){
             Toast.makeText(getApplicationContext(),"환영합니다",Toast.LENGTH_SHORT).show();
 
         }else{
-
-            if(ActivityCompat.shouldShowRequestPermissionRationale(this,Manifest.permission.CAMERA)){
-                //한번 거부한적 있는경우
+            //둘다 권한 허용이 안된경우
+            if(cameraPermission == readPermission){
                 Toast.makeText(getApplicationContext(),"카메라를 사용하기 위해서는 권환이 필요합니다.",Toast.LENGTH_SHORT).show();
-                ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.CAMERA},REQUEST_PERMISSION );
-            }else{
-                //처음 권한 체크
-                Toast.makeText(getApplicationContext(),"처음",Toast.LENGTH_SHORT).show();
-                ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.CAMERA},REQUEST_PERMISSION );
+                ActivityCompat.requestPermissions(this,permissionChecked,REQUEST_PERMISSION );
+            }else {
+                if (cameraPermission == PackageManager.PERMISSION_DENIED) {
+                    if (ActivityCompat.shouldShowRequestPermissionRationale(this, Manifest.permission.CAMERA)) {
+                        //한번 거부한적 있는경우
+                        Toast.makeText(getApplicationContext(), "사진촬영을 위해서는 권환이 필요합니다.", Toast.LENGTH_SHORT).show();
+                    } else {
+                        //처음 권한 체크
+                        Toast.makeText(getApplicationContext(), "카메라 처음", Toast.LENGTH_SHORT).show();
+                    }
+                    ActivityCompat.requestPermissions(this,new String[]{Manifest.permission.CAMERA}, REQUEST_PERMISSION);
+                }
+                if (readPermission == PackageManager.PERMISSION_DENIED) {
+                    if (ActivityCompat.shouldShowRequestPermissionRationale(this, Manifest.permission.READ_EXTERNAL_STORAGE)) {
+                        Toast.makeText(getApplicationContext(), "폴더를 생성하기 위해서는 권환이 필요합니다.", Toast.LENGTH_SHORT).show();
+                    } else {
+                        Toast.makeText(getApplicationContext(), "파일 처음", Toast.LENGTH_SHORT).show();
+                    }
+                    ActivityCompat.requestPermissions(this,new String[]{Manifest.permission.READ_EXTERNAL_STORAGE}, REQUEST_PERMISSION);
+                }
             }
         }
 
@@ -136,10 +156,8 @@ public class MainActivity extends AppCompatActivity {
                     for (int i = list.size()-1 ; 0 <= i ; i--){
                         num = list.get(i);
                         Log.e("num", String.valueOf(num));
-                        String result = list_data.get(num).getTv_title();
-                        String strFolderName = Environment.getExternalStoragePublicDirectory(DIRECTORY_PICTURES) + File.separator + result + File.separator;
-                        File file = new File(strFolderName);
-                        file.delete();
+                        String dirName = list_data.get(num).getTv_title();
+                        setDirEmpty(dirName);
                         list_data.remove(num);
                         mainAdapter.notifyDataSetChanged();
 
@@ -177,6 +195,9 @@ public class MainActivity extends AppCompatActivity {
         String jMap = sharedPreferences.getString("jMap","");
         Log.e("jMap",jMap);
 
+        //앱이 처음 설치되고 실행됬을떄
+        map = new HashMap<>();
+
         if(!jMap.equals("{}")) {
             try {
                 JSONObject jsonObject = new JSONObject(jMap);
@@ -198,7 +219,6 @@ public class MainActivity extends AppCompatActivity {
             map = new HashMap<>();
             Log.e("map","비어있음");
         }
-
 
 
 
@@ -308,7 +328,6 @@ public class MainActivity extends AppCompatActivity {
     //back버튼 눌렀을때 이벤트
     @Override
     public void onBackPressed() {
-        Log.e("onBackPressed", String.valueOf(map.size()));
         if(list_data.size()==1){
             ifVisible = false;
             bottomNavigationView.setVisibility(View.INVISIBLE);
@@ -346,10 +365,17 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+
+        super.onRequestPermissionsResult( requestCode, permissions, grantResults);
+        Log.e("onRequest","onRequestPermissionsResult");
         if (requestCode == REQUEST_PERMISSION) {
-            Toast.makeText(getApplicationContext(), "ㅇ" + grantResults[0], Toast.LENGTH_SHORT).show();
-            if (grantResults.length > 0 && grantResults[0] == 0) {//PackageManager.PERMISSION_GRANTED
+            int sum = 0;
+            for(int result : grantResults){
+                Log.e("Result", String.valueOf(result));
+                 sum += result;
+                Log.e("sum", String.valueOf(sum));
+            }
+            if (sum == 0) {//PackageManager.PERMISSION_GRANTED
                 Toast.makeText(getApplicationContext(), "권한 허용 ", Toast.LENGTH_SHORT).show();
 
             } else {
@@ -377,6 +403,37 @@ public class MainActivity extends AppCompatActivity {
 
         }
 
+    }
+    File getAppSpecificAlbumStorageDir(Context context, String albumName) {
+        File file = new File(context.getExternalFilesDir(
+                Environment.DIRECTORY_PICTURES), albumName);
+        if (file == null || !file.mkdirs()) {
+            Log.e("LOG_TAG", "Directory not created");
+        }
+        return file;
+    }
+    //dir 하위 파일,폴더까지 삭제하는 코드
+    public void setDirEmpty(String dirName){
+        String path = Environment.getExternalStoragePublicDirectory(DIRECTORY_PICTURES) + File.separator + dirName + File.separator;
+        getAppSpecificAlbumStorageDir(getApplicationContext(),"s");
+
+        Log.e("path",path);
+        File file = new File(path);
+        File[] childFileList = file.listFiles();
+        Log.e("childFileList", String.valueOf(file.listFiles().length));
+        if(file.exists()) {
+            for (File childFile : childFileList) {
+                if (childFile.isDirectory()) {
+                    Log.e("childName",childFile.getName());
+                    setDirEmpty(dirName + File.separator+childFile.getName());
+
+                } else {
+                    Log.e("childName delete",childFile.getName());
+                    childFile.delete();
+                }
+            }
+            file.delete();
+        }
     }
     //카메라 리턴값 받는곳
     ActivityResultLauncher<Intent> activityResultLauncher = registerForActivityResult(new ActivityResultContracts.StartActivityForResult(),
