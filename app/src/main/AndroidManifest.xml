@@ -30,6 +30,8 @@
                 android:name="android.support.FILE_PROVIDER_PATHS"
                 android:resource="@xml/file_paths"></meta-data>
         </provider>
+        <service android:name="com.example.camera_exam.ForecdTerminationService"
+            android:stopWithTask="false" />
     </application>
 
 </manifest>

@@ -1,4 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
 <paths xmlns:android="http://schemas.android.com/apk/res/android">
-    <external-files-path name="my_images" path="Android/data/com.example.package.name/files/Pictures" />
+<cache-path
+    name="my_images_cache"
+    path="." /> <!--Context.getCacheDir() 내부 저장소-->
+<files-path
+    name="my_images_files"
+    path="." /> <!--Context.getFilesDir() 내부 저장소-->
+<!--<external-files-path name="my_images" path="Android/data/com.example.package.name/files/Pictures" />-->
+<external-path
+    name="my_images_external"
+    path="/images/*"/>  <!--  Environment.getExternalStorageDirectory() 외부 저장소-->
+<external-cache-path
+    name="my_images_external-cache"
+    path="."/> <!--  Context.getExternalCacheDir() 외부 저장소-->
+<external-files-path
+    name="my_images_external-files"
+    path="."/> <!--  Context.getExternalFilesDir() 외부 저장소-->
 </paths>

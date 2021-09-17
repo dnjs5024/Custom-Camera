@@ -1,5 +1,6 @@
 package com.example.camera_exam;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.Intent;
 import android.provider.MediaStore;
@@ -12,6 +13,7 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.activity.result.ActivityResultLauncher;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -31,6 +33,8 @@ public class MainAdapter extends RecyclerView.Adapter<MainAdapter.CustomViewHold
         this.context = context;
     }
 
+
+
     @NonNull
     @Override
     public CustomViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
@@ -42,7 +46,7 @@ public class MainAdapter extends RecyclerView.Adapter<MainAdapter.CustomViewHold
     }
 
     @Override
-    public void onBindViewHolder(@NonNull CustomViewHolder holder, int position) {
+    public void onBindViewHolder(@NonNull CustomViewHolder holder, @SuppressLint("RecyclerView") int position) {
         holder.checkBox.setId(10000+position);
         holder.checkBox.setVisibility(View.INVISIBLE);
         holder.textView.setText(arrayList.get(position).getTv_title());
@@ -51,9 +55,23 @@ public class MainAdapter extends RecyclerView.Adapter<MainAdapter.CustomViewHold
         holder.itemView.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Toast.makeText(context.getApplicationContext(),"촬영",Toast.LENGTH_SHORT).show();
-                    Intent intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
-                    context.startActivity(intent);
+                //MainActivity 메소드를 실행
+                ((MainActivity)MainActivity.mContext).onCamera(arrayList.get(position).getTv_title());
+
+            }
+        });
+        holder.itemView.setOnLongClickListener(new View.OnLongClickListener() {
+            @Override
+            public boolean onLongClick(View view) {
+                Toast.makeText(context.getApplicationContext(),"아파!",Toast.LENGTH_SHORT).show();
+                //MainActivity 메소드를 실행
+                ((MainActivity)MainActivity.mContext).getImage();
+
+
+//                imageView = (ImageView)findViewById(R.id.iv_profile);
+//                Glide.with(getApplicationContext()).load(uri).into(imageView);
+
+                return false;
             }
         });
 

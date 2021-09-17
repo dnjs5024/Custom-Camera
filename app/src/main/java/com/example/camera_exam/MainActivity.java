@@ -17,14 +17,22 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import android.Manifest;
+import android.annotation.SuppressLint;
 import android.app.Activity;
+import android.content.ContentValues;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
+import android.database.Cursor;
+import android.graphics.Bitmap;
+import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
+import android.provider.MediaStore;
+import android.provider.OpenableColumns;
 import android.provider.Settings;
 import android.util.Log;
 import android.view.Menu;
@@ -38,6 +46,7 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.Toast;
 
+import com.bumptech.glide.Glide;
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -49,7 +58,9 @@ import org.json.JSONObject;
 
 import java.io.File;
 import java.io.IOException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -71,16 +82,31 @@ public class MainActivity extends AppCompatActivity {
     private  Toolbar toolbar;
     private int checkedCnt = 0;
     private  Menu mMenu;
+    public static  Context mContext;
+    private String albumName;
+    private boolean isDestroy = false;
+    private String imageName; // 카메라로 찍은 사진 이름
+    private Uri imageUri; // 카메라로 찍은 사진 Uri
+    private ImageView imageView;
+    private Uri locationUri; //갤러리에서 가져온 사진 Uri
+
 
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        //앱 강제종료
+        startService(new Intent(this, ForecdTerminationService.class));
+
         setContentView(R.layout.activity_main);
         //툴바생성
         toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+
+
+        mContext = this;
+
 
         //권한 체크
 
@@ -181,7 +207,7 @@ public class MainActivity extends AppCompatActivity {
         gridLayoutManager = new GridLayoutManager(this,5);
         recyclerView.setLayoutManager(gridLayoutManager);
         list_data = new ArrayList<MainData>();
-        mainAdapter = new MainAdapter(list_data,this);
+        mainAdapter = new MainAdapter(list_data,getApplicationContext());
         recyclerView.setAdapter(mainAdapter);
 
         //기본 경로 만들기
@@ -285,6 +311,7 @@ public class MainActivity extends AppCompatActivity {
                 public void onClick(DialogInterface dialog, int which) {
 
                     dialog.dismiss();
+
                 }
             });
             ad.show();
@@ -341,7 +368,6 @@ public class MainActivity extends AppCompatActivity {
                 checkBox.setVisibility(View.INVISIBLE);
                 checkBox.setChecked(false);
             }
-            Toast.makeText(getApplicationContext(),"뒤로가기 버튼 : "+cnt,Toast.LENGTH_SHORT);
             bottomNavigationView.setVisibility(View.INVISIBLE);
             showOptionMenu( true);
             checkedCnt = 0;
@@ -404,55 +430,108 @@ public class MainActivity extends AppCompatActivity {
         }
 
     }
-    File getAppSpecificAlbumStorageDir(Context context, String albumName) {
-        File file = new File(context.getExternalFilesDir(
-                Environment.DIRECTORY_PICTURES), albumName);
-        if (file == null || !file.mkdirs()) {
-            Log.e("LOG_TAG", "Directory not created");
-        }
-        return file;
-    }
+
     //dir 하위 파일,폴더까지 삭제하는 코드
+    public void childFileDelete(String dirName){
+
+        getContentResolver().delete(MediaStore.Images.Media.EXTERNAL_CONTENT_URI ,
+                MediaStore.Images.Media.RELATIVE_PATH +"='Pictures/"+dirName+"/'",null);
+
+    }
     public void setDirEmpty(String dirName){
         String path = Environment.getExternalStoragePublicDirectory(DIRECTORY_PICTURES) + File.separator + dirName + File.separator;
-        getAppSpecificAlbumStorageDir(getApplicationContext(),"s");
-
+        path.trim();
         Log.e("path",path);
         File file = new File(path);
-        File[] childFileList = file.listFiles();
-        Log.e("childFileList", String.valueOf(file.listFiles().length));
-        if(file.exists()) {
-            for (File childFile : childFileList) {
-                if (childFile.isDirectory()) {
-                    Log.e("childName",childFile.getName());
-                    setDirEmpty(dirName + File.separator+childFile.getName());
+        childFileDelete(dirName);
+        file.delete();
 
-                } else {
-                    Log.e("childName delete",childFile.getName());
-                    childFile.delete();
-                }
-            }
-            file.delete();
-        }
     }
-    //카메라 리턴값 받는곳
-    ActivityResultLauncher<Intent> activityResultLauncher = registerForActivityResult(new ActivityResultContracts.StartActivityForResult(),
+    //카메라 실행
+    public void onCamera(String dirName){
+        isDestroy = true;
+        albumName = dirName;
+        @SuppressLint("SimpleDateFormat") String timeStamp = new SimpleDateFormat("yyyyMMddHHmmss").format(new Date());
+        imageName = "SAMPLE_"+timeStamp+".jpg";
+        Intent intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+        imageUri = createImageUri(dirName,imageName, "image/jpeg");
+//        intent.setClipData(ClipData.newRawUri("",imageUri));
+//        intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
+        intent.putExtra(MediaStore.EXTRA_OUTPUT, imageUri);
+        activityResultLauncher.launch(intent);
+    }
+    private Uri createImageUri(String dirName,String fileName, String mimeType) {
+
+        ContentValues values = new ContentValues();
+        values.put(MediaStore.Images.Media.DISPLAY_NAME, fileName); // 확장자가 붙어있는 파일명 ex) sample.jpg
+        values.put(MediaStore.Images.Media.MIME_TYPE, mimeType); // ex) image/jpeg
+        if(!dirName.equals("기본경로")){
+            values.put( MediaStore.Images.Media.RELATIVE_PATH, "Pictures/" + dirName );
+        }
+        Log.e("values",String.valueOf(values));
+        Uri uri = getContentResolver().insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values);
+        Log.e("uri",String.valueOf(uri));
+        return uri;
+
+    }
+    ActivityResultLauncher<Intent> activityResultLauncher =  registerForActivityResult(new ActivityResultContracts.StartActivityForResult(),
             new ActivityResultCallback<ActivityResult>() {
                 @Override
                 public void onActivityResult(ActivityResult result) {
-                    if(result.getResultCode()==RESULT_OK){
-                        Intent intent = result.getData();
-                        String str = intent.getStringExtra("text");
-                        Toast.makeText(getApplicationContext(),"test",Toast.LENGTH_SHORT).show();
-                    }
+
+                         isDestroy = false;
+
+                        if(result.getResultCode()==RESULT_OK){
+
+                            onCamera(albumName);
+                            Log.e("result","굳");
+                        }else{
+
+                            Log.e("result","오류");
+                            getContentResolver().delete(imageUri, null, null);
+                        }
+
+
                 }
             });
+    //갤러리에서 사진을 가져오는 코드
+    public Uri getImage(){
+        Intent intent = new Intent();
+        intent.setType("image/*");
+        intent.setAction(Intent.ACTION_GET_CONTENT);
+        activityResultLauncherAlbum.launch(intent);
+
+        return locationUri;
+    }
+    public Uri returnUri(Uri uri){
+        return uri;
+    }
+
+    ActivityResultLauncher<Intent> activityResultLauncherAlbum = registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), new ActivityResultCallback<ActivityResult>() {
+        @Override
+        public void onActivityResult(ActivityResult result) {
+            if(RESULT_OK==result.getResultCode()){
+                Intent intent = result.getData();
+                Log.e("2","2");
+                locationUri = intent.getData();
+                returnUri(locationUri);
+
+            }else{
+                Log.e("str","제대로 해라");
+            }
+
+        }
+    });
 
 
 
     @Override
     protected void onDestroy() {
         super.onDestroy();
+        if(isDestroy){
+            getContentResolver().delete(imageUri, null, null);
+
+        }
         Log.e("last data size", String.valueOf(list_data.size()));
         map.clear();
         if (list_data.size()>0) {
@@ -468,5 +547,8 @@ public class MainActivity extends AppCompatActivity {
         editor.commit();
         Log.e("jMap",sharedPreferences.getString("jMap",""));
     }
+
+
+
 
 }
