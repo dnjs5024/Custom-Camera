@@ -83,12 +83,14 @@ public class MainActivity extends AppCompatActivity {
     private int checkedCnt = 0;
     private  Menu mMenu;
     public static  Context mContext;
-    private String albumName;
+    private String albumName = "";
     private boolean isDestroy = false;
-    private String imageName; // 카메라로 찍은 사진 이름
+    private boolean isRun = true;
+    private String imageName = ""; // 카메라로 찍은 사진 이름
     private Uri imageUri; // 카메라로 찍은 사진 Uri
     private ImageView imageView;
     private Uri locationUri; //갤러리에서 가져온 사진 Uri
+    private  int position = 0; //사진 수정했을때 몇번째 데이터인지 알기위해
 
 
 
@@ -183,7 +185,7 @@ public class MainActivity extends AppCompatActivity {
                         num = list.get(i);
                         Log.e("num", String.valueOf(num));
                         String dirName = list_data.get(num).getTv_title();
-                        setDirEmpty(dirName);
+                        childFileDelete(dirName);
                         list_data.remove(num);
                         mainAdapter.notifyDataSetChanged();
 
@@ -211,7 +213,7 @@ public class MainActivity extends AppCompatActivity {
         recyclerView.setAdapter(mainAdapter);
 
         //기본 경로 만들기
-        MainData firstData = new MainData(R.mipmap.ic_launcher,"기본경로");
+        MainData firstData = new MainData(R.mipmap.ic_launcher,"기본경로",null);
         list_data.add(firstData);
         Log.e("firstData",list_data.toString());
         mainAdapter.notifyDataSetChanged();
@@ -232,8 +234,17 @@ public class MainActivity extends AppCompatActivity {
                 Iterator<String>iterator = map.keySet().iterator();
                 while(iterator.hasNext()){
                     String key = iterator.next();
-                    String value = map.get(key).toString();
-                    MainData mainData = new MainData(R.mipmap.ic_launcher,value);
+                    Map<String,Object> valueMap = (Map<String, Object>) map.get(key);
+                    String title = valueMap.get("title").toString();
+                    Uri uri = null;
+                    if(valueMap.containsKey("uri")){
+                        String strUri =  valueMap.get("uri").toString();
+                        uri = Uri.parse(strUri);
+                        Log.e("title",title);
+                        Log.e("uri", String.valueOf(uri));
+                    }
+
+                    MainData mainData = new MainData(R.mipmap.ic_launcher,title,uri);
                     list_data.add(mainData);
                     mainAdapter.notifyDataSetChanged();
                 }
@@ -288,18 +299,7 @@ public class MainActivity extends AppCompatActivity {
                 @Override
                 public void onClick(DialogInterface dialog, int which) {
                     String result = editText.getText().toString();
-                    String strFolderName = Environment.getExternalStoragePublicDirectory(DIRECTORY_PICTURES) + File.separator + result + File.separator;
-                    Log.e("location==>",strFolderName);
-                    File file = new File(strFolderName);
-                    if( !file.exists() ) {
-                        Log.e("File==>", "파일 생성");
-                        file.mkdirs();
-                    }else{
-                        Log.e("File==>", "이미 존재함");
-
-                    }
-
-                    MainData mainData = new MainData(R.mipmap.ic_launcher, result);
+                    MainData mainData = new MainData(R.mipmap.ic_launcher, result,null);
                     list_data.add(mainData);
                     Log.e("dialog data",list_data.toString());
                     mainAdapter.notifyDataSetChanged();
@@ -432,19 +432,11 @@ public class MainActivity extends AppCompatActivity {
     }
 
     //dir 하위 파일,폴더까지 삭제하는 코드
-    public void childFileDelete(String dirName){
 
+    public void childFileDelete(String dirName){
         getContentResolver().delete(MediaStore.Images.Media.EXTERNAL_CONTENT_URI ,
                 MediaStore.Images.Media.RELATIVE_PATH +"='Pictures/"+dirName+"/'",null);
 
-    }
-    public void setDirEmpty(String dirName){
-        String path = Environment.getExternalStoragePublicDirectory(DIRECTORY_PICTURES) + File.separator + dirName + File.separator;
-        path.trim();
-        Log.e("path",path);
-        File file = new File(path);
-        childFileDelete(dirName);
-        file.delete();
 
     }
     //카메라 실행
@@ -495,16 +487,15 @@ public class MainActivity extends AppCompatActivity {
                 }
             });
     //갤러리에서 사진을 가져오는 코드
-    public Uri getImage(){
+    public void getImage(int position){
+        this.position = position;
+        locationUri = null;
+        Log.e("1","1");
         Intent intent = new Intent();
         intent.setType("image/*");
         intent.setAction(Intent.ACTION_GET_CONTENT);
         activityResultLauncherAlbum.launch(intent);
 
-        return locationUri;
-    }
-    public Uri returnUri(Uri uri){
-        return uri;
     }
 
     ActivityResultLauncher<Intent> activityResultLauncherAlbum = registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), new ActivityResultCallback<ActivityResult>() {
@@ -514,9 +505,15 @@ public class MainActivity extends AppCompatActivity {
                 Intent intent = result.getData();
                 Log.e("2","2");
                 locationUri = intent.getData();
-                returnUri(locationUri);
-
+                Log.e("locationUri", String.valueOf(locationUri));
+                MainData changeData = new MainData(R.mipmap.ic_launcher,list_data.get(position).getTv_title(),locationUri);
+                list_data.set(position,changeData);
+                Log.e("changeData",list_data.toString());
+                mainAdapter.notifyDataSetChanged();
+                locationUri = null;
+                position = 0;
             }else{
+                locationUri = null;
                 Log.e("str","제대로 해라");
             }
 
@@ -536,18 +533,26 @@ public class MainActivity extends AppCompatActivity {
         map.clear();
         if (list_data.size()>0) {
             for (int i = 1; i < list_data.size(); i++) {
-                map.put("list_data" + i, list_data.get(i).getTv_title());
+                //map.put("list_data" + i, list_data.get(i).getTv_title());
+                Map<String,Object> rMap = new HashMap<>();
+                rMap.put("title",list_data.get(i).getTv_title());
+                if(list_data.get(i).getIv_setProfile() != null){
+                    rMap.put("uri",list_data.get(i).getIv_setProfile().toString());
+                }
+                map.put("list_data" + i,rMap);
+                Log.e("rMap",rMap.toString());
+                Log.e("map",map.toString());
             }
         }
-        Log.e("last data",list_data.toString());
+        Log.e("map1",map.toString());
         JSONObject jsonObject = new JSONObject(map);
+        Log.e("jsonObject",jsonObject.toString());
         SharedPreferences sharedPreferences = getSharedPreferences("folderName",0);
         SharedPreferences.Editor editor = sharedPreferences.edit();
         editor.putString("jMap",jsonObject.toString());
         editor.commit();
         Log.e("jMap",sharedPreferences.getString("jMap",""));
     }
-
 
 
 

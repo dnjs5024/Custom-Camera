@@ -3,6 +3,7 @@ package com.example.camera_exam;
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.Intent;
+import android.net.Uri;
 import android.provider.MediaStore;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -50,8 +51,12 @@ public class MainAdapter extends RecyclerView.Adapter<MainAdapter.CustomViewHold
         holder.checkBox.setId(10000+position);
         holder.checkBox.setVisibility(View.INVISIBLE);
         holder.textView.setText(arrayList.get(position).getTv_title());
-        Glide.with(holder.imageView).load(arrayList.get(position).getIv_profile()).into(holder.imageView);
-        String str = "aa"+holder.checkBox.getId();
+        //사진 변경했을 경우
+        if(arrayList.get(position).getIv_setProfile() == null){
+            Glide.with(holder.imageView).load(arrayList.get(position).getIv_profile()).into(holder.imageView);
+        }else{
+            Glide.with(holder.imageView).load(arrayList.get(position).getIv_setProfile()).into(holder.imageView);
+        }
         holder.itemView.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -65,11 +70,7 @@ public class MainAdapter extends RecyclerView.Adapter<MainAdapter.CustomViewHold
             public boolean onLongClick(View view) {
                 Toast.makeText(context.getApplicationContext(),"아파!",Toast.LENGTH_SHORT).show();
                 //MainActivity 메소드를 실행
-                ((MainActivity)MainActivity.mContext).getImage();
-
-
-//                imageView = (ImageView)findViewById(R.id.iv_profile);
-//                Glide.with(getApplicationContext()).load(uri).into(imageView);
+                ((MainActivity)MainActivity.mContext).getImage(position);
 
                 return false;
             }
@@ -98,5 +99,25 @@ public class MainAdapter extends RecyclerView.Adapter<MainAdapter.CustomViewHold
 
         }
     }
+    public class CamaraThread extends Thread{
+
+        CamaraThread(){
+
+        }
+
+        @Override
+        public void run() {
+            while(true){
+                Log.e("CameraThread","사진 가져오는 중");
+                try {
+                    Thread.sleep(5000);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+          //  Log.e("CameraThread","thread 종료");
+        }
+    }
+
 
 }
