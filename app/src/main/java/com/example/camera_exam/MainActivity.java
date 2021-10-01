@@ -31,6 +31,7 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
+import android.os.PersistableBundle;
 import android.provider.MediaStore;
 import android.provider.OpenableColumns;
 import android.provider.Settings;
@@ -70,6 +71,7 @@ import java.util.Map;
 public class MainActivity extends AppCompatActivity {
 
     private static final int REQUEST_PERMISSION = 10;
+    private static final int REQUEST_PERMISSION2 = 122;
     private RecyclerView recyclerView;
     private  List<MainData> list_data;
     private  MainAdapter mainAdapter;
@@ -81,6 +83,7 @@ public class MainActivity extends AppCompatActivity {
     private boolean ifVisible = false;
     private  Toolbar toolbar;
     private int checkedCnt = 0;
+    public  boolean doTouch = false;//수정 삭제시 아이템 클릭시 카메라 안나오게
     private  Menu mMenu;
     public static  Context mContext;
     private String albumName = "";
@@ -91,6 +94,7 @@ public class MainActivity extends AppCompatActivity {
     private ImageView imageView;
     private Uri locationUri; //갤러리에서 가져온 사진 Uri
     private  int position = 0; //사진 수정했을때 몇번째 데이터인지 알기위해
+    private  int fixNum = 0; //사진 수정했을때 몇번째 데이터인지 알기위해
 
 
 
@@ -109,44 +113,10 @@ public class MainActivity extends AppCompatActivity {
 
         mContext = this;
 
-
-        //권한 체크
-
-        String[] permissionChecked = {
-                Manifest.permission.CAMERA,
-                Manifest.permission.READ_EXTERNAL_STORAGE
-        };
-        int cameraPermission = ContextCompat.checkSelfPermission(MainActivity.this, permissionChecked[0]);
-        int readPermission = ContextCompat.checkSelfPermission(MainActivity.this, permissionChecked[1]);
-
-        if(cameraPermission== PackageManager.PERMISSION_GRANTED && readPermission == PackageManager.PERMISSION_GRANTED){
-            Toast.makeText(getApplicationContext(),"환영합니다",Toast.LENGTH_SHORT).show();
-
+        if(Build.VERSION.SDK_INT < 23){
+            return;
         }else{
-            //둘다 권한 허용이 안된경우
-            if(cameraPermission == readPermission){
-                Toast.makeText(getApplicationContext(),"카메라를 사용하기 위해서는 권환이 필요합니다.",Toast.LENGTH_SHORT).show();
-                ActivityCompat.requestPermissions(this,permissionChecked,REQUEST_PERMISSION );
-            }else {
-                if (cameraPermission == PackageManager.PERMISSION_DENIED) {
-                    if (ActivityCompat.shouldShowRequestPermissionRationale(this, Manifest.permission.CAMERA)) {
-                        //한번 거부한적 있는경우
-                        Toast.makeText(getApplicationContext(), "사진촬영을 위해서는 권환이 필요합니다.", Toast.LENGTH_SHORT).show();
-                    } else {
-                        //처음 권한 체크
-                        Toast.makeText(getApplicationContext(), "카메라 처음", Toast.LENGTH_SHORT).show();
-                    }
-                    ActivityCompat.requestPermissions(this,new String[]{Manifest.permission.CAMERA}, REQUEST_PERMISSION);
-                }
-                if (readPermission == PackageManager.PERMISSION_DENIED) {
-                    if (ActivityCompat.shouldShowRequestPermissionRationale(this, Manifest.permission.READ_EXTERNAL_STORAGE)) {
-                        Toast.makeText(getApplicationContext(), "폴더를 생성하기 위해서는 권환이 필요합니다.", Toast.LENGTH_SHORT).show();
-                    } else {
-                        Toast.makeText(getApplicationContext(), "파일 처음", Toast.LENGTH_SHORT).show();
-                    }
-                    ActivityCompat.requestPermissions(this,new String[]{Manifest.permission.READ_EXTERNAL_STORAGE}, REQUEST_PERMISSION);
-                }
-            }
+                requestUserPermission();
         }
 
         //바텀내비 생성 //저장공간 삭제
@@ -197,6 +167,7 @@ public class MainActivity extends AppCompatActivity {
                     bottomNavigationView.setVisibility(View.INVISIBLE);
                     showOptionMenu( true);
                     ifVisible = false;
+                    doTouch = false;
 
                 }
                 return false;
@@ -260,6 +231,91 @@ public class MainActivity extends AppCompatActivity {
 
 
     }
+
+    //권한 체크
+    private void requestUserPermission() {
+        String[] permissionChecked = {
+                Manifest.permission.CAMERA,
+                Manifest.permission.READ_EXTERNAL_STORAGE,
+                Manifest.permission.WRITE_EXTERNAL_STORAGE
+        };
+        int cameraPermission = ContextCompat.checkSelfPermission(MainActivity.this, permissionChecked[0]);
+        int readPermission = ContextCompat.checkSelfPermission(MainActivity.this, permissionChecked[1]);
+        int writerPerMission = ContextCompat.checkSelfPermission(MainActivity.this,permissionChecked[2]);
+
+        if(Build.VERSION.SDK_INT > Build.VERSION_CODES.P){
+            if(cameraPermission== PackageManager.PERMISSION_GRANTED && readPermission == PackageManager.PERMISSION_GRANTED){
+                Toast.makeText(getApplicationContext(),"환영합니다",Toast.LENGTH_SHORT).show();
+
+            }else{
+                //둘다 권한 허용이 안된경우
+                if(cameraPermission == readPermission){
+                    Toast.makeText(getApplicationContext(),"카메라를 사용하기 위해서는 권환이 필요합니다.",Toast.LENGTH_SHORT).show();
+                    ActivityCompat.requestPermissions(this,new String[]{Manifest.permission.CAMERA,Manifest.permission.READ_EXTERNAL_STORAGE},REQUEST_PERMISSION );
+                }else {
+                    if (cameraPermission == PackageManager.PERMISSION_DENIED) {
+                        if (ActivityCompat.shouldShowRequestPermissionRationale(this, Manifest.permission.CAMERA)) {
+                            //한번 거부한적 있는경우
+                            Toast.makeText(getApplicationContext(), "앱을 사용하기 위해서는 권환이 필요합니다.", Toast.LENGTH_SHORT).show();
+                        } else {
+                            //처음 권한 체크
+                            Toast.makeText(getApplicationContext(), "사진촬영을 위해서는 권환이 필요합니다.", Toast.LENGTH_SHORT).show();
+                        }
+                        ActivityCompat.requestPermissions(this,new String[]{Manifest.permission.CAMERA}, REQUEST_PERMISSION);
+                    }
+                    if (readPermission == PackageManager.PERMISSION_DENIED) {
+                        if (ActivityCompat.shouldShowRequestPermissionRationale(this, Manifest.permission.READ_EXTERNAL_STORAGE)) {
+                            Toast.makeText(getApplicationContext(), "앱을 사용하기 위해서는 권환이 필요합니다.", Toast.LENGTH_SHORT).show();
+                        } else {
+                            Toast.makeText(getApplicationContext(), "사진촬영을 위해서는 권환이 필요합니다.", Toast.LENGTH_SHORT).show();
+                        }
+                        ActivityCompat.requestPermissions(this,new String[]{Manifest.permission.READ_EXTERNAL_STORAGE}, REQUEST_PERMISSION);
+                    }
+                }
+            }
+
+        }else{
+            if(cameraPermission== PackageManager.PERMISSION_GRANTED && writerPerMission == PackageManager.PERMISSION_GRANTED && readPermission== PackageManager.PERMISSION_GRANTED){
+                Toast.makeText(getApplicationContext(),"환영합니다",Toast.LENGTH_SHORT).show();
+
+            }else{
+                int cnt = 0;
+                String[] temp = new String[0];
+                if (cameraPermission == PackageManager.PERMISSION_DENIED) {
+                        cnt++;
+                        temp = new String[cnt];
+                        for( int i = 0 ; i < cnt ; i++ ){
+                            temp[i] = permissionChecked[i];
+                        }
+                    }
+                    if (readPermission == PackageManager.PERMISSION_DENIED) {
+                        cnt++;
+                        temp = new String[cnt];
+                        for( int i = 0 ; i < cnt ; i++ ){
+                            temp[i] = permissionChecked[i];
+                        }
+                    }
+                    if (writerPerMission == PackageManager.PERMISSION_DENIED) {
+                        cnt++;
+                        temp = new String[cnt];
+                        for( int i = 0 ; i < cnt ; i++ ){
+                            temp[i] = permissionChecked[i];
+                        }
+                    }
+                    Toast.makeText(getApplicationContext(), "사진촬영을 위해서는 권환이 필요합니다.", Toast.LENGTH_SHORT).show();
+
+                ActivityCompat.requestPermissions(this,temp, REQUEST_PERMISSION2);
+
+            }
+
+
+        }
+
+
+
+    }
+
+
     //툴바 메뉴 처음 클릭했을때만 실행
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -292,17 +348,23 @@ public class MainActivity extends AppCompatActivity {
             AlertDialog.Builder ad = new AlertDialog.Builder(this);
             ad.setIcon(R.mipmap.ic_launcher_round);
             ad.setTitle("앨범 생성");
-            ad.setMessage("사진을 저장할 경로를 적어주세요");
+            ad.setMessage("사진을 저장할 경로를 적어주세요.");
             EditText editText = new EditText(this);
+            editText.setHint("이름은 여섯글자 이하로 작성해주세요.");
             ad.setView(editText);
             ad.setPositiveButton("확인", new DialogInterface.OnClickListener() {
                 @Override
                 public void onClick(DialogInterface dialog, int which) {
                     String result = editText.getText().toString();
-                    MainData mainData = new MainData(R.mipmap.ic_launcher, result,null);
-                    list_data.add(mainData);
-                    Log.e("dialog data",list_data.toString());
-                    mainAdapter.notifyDataSetChanged();
+                    if(result.trim().equals("")){
+                        Toast.makeText(getApplicationContext(),"이름은 한글자 이상으로 작성해주세요",Toast.LENGTH_SHORT).show();
+                    }else if(result.length()>6){
+                        Toast.makeText(getApplicationContext(),"이름은 여섯글자이하로 해주세요ㅠ",Toast.LENGTH_SHORT).show();
+                    }else {
+                        MainData mainData = new MainData(R.mipmap.ic_launcher, result, null);
+                        list_data.add(mainData);
+                        mainAdapter.notifyDataSetChanged();
+                    }
                     dialog.dismiss();
                 }
             });
@@ -321,6 +383,7 @@ public class MainActivity extends AppCompatActivity {
                 Toast.makeText(getApplicationContext(),"삭제할 데이터가 존재하지 않습니다.",Toast.LENGTH_SHORT).show();
                 return true;
             }
+            doTouch = true;
             toolbar.setTitle("0");
             int cnt = 10000;
             for(int i = 1 ;i < list_data.size();i++){
@@ -346,12 +409,90 @@ public class MainActivity extends AppCompatActivity {
             ifVisible = true;
             Log.e("for문", String.valueOf(ifVisible));
             return true;
+        }else if(id == R.id.menu_3){
+            if(list_data.size()==1){
+                Toast.makeText(getApplicationContext(),"수정할 데이터가 존재하지 않습니다.",Toast.LENGTH_SHORT).show();
+                return true;
+            }
+            doTouch = true;
+            toolbar.setTitle("수정할 항목을 선택해주세요");
+            int cnt = 10000;
+            for(int i = 1 ;i < list_data.size();i++){
+                checkBox  = (CheckBox)findViewById(cnt + i);
+                checkBox.setVisibility(View.VISIBLE);
+                checkBox.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+                    @Override
+                    public void onCheckedChanged(CompoundButton compoundButton, boolean b) {
+                        for(int i = 1 ; i < list_data.size() ; i++) {
+                            checkBox = (CheckBox) findViewById(cnt + i);
+                            if(checkBox.isChecked()){
+                                int num = checkBox.getId();
+                                fixNum = num - 10000;
+                                Log.e("position", String.valueOf(position));
+                                checkBox.setChecked(false);
+                            }
+                        }
+                        AlertDialog.Builder ad = new AlertDialog.Builder(MainActivity.this);
+                        ad.setIcon(R.mipmap.ic_launcher_round);
+                        ad.setTitle("앨범이름 수정");
+                        ad.setMessage("변경할 이름을 적어주세요");
+                        EditText editText = new EditText(MainActivity.this);
+                        editText.setHint("이름은 여섯글자 이하로 작성해주세요.");
+                        ad.setView(editText);
+                        ad.setPositiveButton("확인", new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialog, int which) {
+                                String result = editText.getText().toString();
+                                if(result.trim().equals("")){
+                                    Toast.makeText(getApplicationContext(),"변경할 이름을 한글자 이상으로 적어주세요",Toast.LENGTH_SHORT).show();
+                                }else if(result.length()>6){
+                                    Toast.makeText(getApplicationContext(),"수정할 이름은 여섯글자이하로 해주세요ㅠ",Toast.LENGTH_SHORT).show();
+                                }else{
+                                    MainData changeData = new MainData(R.mipmap.ic_launcher,result,list_data.get(fixNum).getIv_setProfile());
+                                    list_data.set(fixNum,changeData);
+                                    Log.e("changeData",list_data.toString());
+                                    mainAdapter.notifyDataSetChanged();
+
+                                }
+
+                                hideCheckbox();
+                            }
+                        });
+                        ad.setNegativeButton("취소", new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialog, int which) {
+                                dialog.dismiss();
+                                hideCheckbox();
+
+                            }
+                        });
+                        ad.show();
+                    }
+                });
+            }
+            fixNum = 0;
+            ifVisible = true;
+            showOptionMenu( false);
+            return true;
         }
 
         return super.onOptionsItemSelected(item);
     }
-
-
+//checkbox 안보이게
+    public void hideCheckbox(){
+            doTouch = false;
+            fixNum = 0;
+            int cnt = 10000;
+            for(int i = 0 ;i < list_data.size();i++){
+                checkBox  = (CheckBox)findViewById(cnt + i);
+                checkBox.setVisibility(View.INVISIBLE);
+                checkBox.setChecked(false);
+            }
+            bottomNavigationView.setVisibility(View.INVISIBLE);
+            showOptionMenu( true);
+            checkedCnt = 0;
+            toolbar.setTitle("저장위치 선택");
+    }
     //back버튼 눌렀을때 이벤트
     @Override
     public void onBackPressed() {
@@ -373,6 +514,7 @@ public class MainActivity extends AppCompatActivity {
             checkedCnt = 0;
             toolbar.setTitle("저장위치 선택");
             ifVisible = false;
+            doTouch = false;
         }
 
         //두번누르면 종료
@@ -402,10 +544,9 @@ public class MainActivity extends AppCompatActivity {
                 Log.e("sum", String.valueOf(sum));
             }
             if (sum == 0) {//PackageManager.PERMISSION_GRANTED
-                Toast.makeText(getApplicationContext(), "권한 허용 ", Toast.LENGTH_SHORT).show();
+                Toast.makeText(getApplicationContext(), "환영합니다.", Toast.LENGTH_SHORT).show();
 
             } else {
-                Toast.makeText(getApplicationContext(), "권한 거부 ", Toast.LENGTH_SHORT).show();
                 AlertDialog.Builder ad = new AlertDialog.Builder(this);
                 ad.setIcon(R.mipmap.ic_launcher_round);
                 ad.setTitle("안내");
@@ -413,7 +554,7 @@ public class MainActivity extends AppCompatActivity {
                 ad.setPositiveButton("닫기", new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialogInterface, int i) {
-                        dialogInterface.dismiss();
+                        finish();
                     }
                 });
                 ad.setNegativeButton("설정", new DialogInterface.OnClickListener() {
@@ -421,11 +562,45 @@ public class MainActivity extends AppCompatActivity {
                     public void onClick(DialogInterface dialogInterface, int i) {
                         Intent intent = new Intent(Settings.ACTION_SETTINGS);
                         startActivity(intent);
-                        dialogInterface.dismiss();
+                        finish();
                     }
                 });
                 ad.show();
             }
+
+        }
+        if(requestCode == REQUEST_PERMISSION2){
+            int sum = 0;
+            for(int result : grantResults){
+                Log.e("Result", String.valueOf(result));
+                sum += result;
+                Log.e("sum", String.valueOf(sum));
+            }
+            if (sum == 0) {//PackageManager.PERMISSION_GRANTED
+                Toast.makeText(getApplicationContext(), "환영합니다.", Toast.LENGTH_SHORT).show();
+
+            } else {
+                AlertDialog.Builder ad = new AlertDialog.Builder(this);
+                ad.setIcon(R.mipmap.ic_launcher_round);
+                ad.setTitle("안내");
+                ad.setMessage("권한을 허용하실려면 설정->개인정보 보호->권한에서 허용해주세요");
+                ad.setPositiveButton("닫기", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialogInterface, int i) {
+                        finish();
+                    }
+                });
+                ad.setNegativeButton("설정", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialogInterface, int i) {
+                        Intent intent = new Intent(Settings.ACTION_SETTINGS);
+                        startActivity(intent);
+                        finish();
+                    }
+                });
+                ad.show();
+            }
+
 
         }
 
@@ -434,8 +609,27 @@ public class MainActivity extends AppCompatActivity {
     //dir 하위 파일,폴더까지 삭제하는 코드
 
     public void childFileDelete(String dirName){
-        getContentResolver().delete(MediaStore.Images.Media.EXTERNAL_CONTENT_URI ,
-                MediaStore.Images.Media.RELATIVE_PATH +"='Pictures/"+dirName+"/'",null);
+        if(Build.VERSION.SDK_INT > Build.VERSION_CODES.P){
+            getContentResolver().delete(MediaStore.Images.Media.EXTERNAL_CONTENT_URI ,
+                    MediaStore.Images.Media.RELATIVE_PATH +"='Pictures/"+dirName+"/'",null);
+
+        }else{
+            String str = "/storage/emulated/0/Pictures/"+dirName+File.separator;
+            Cursor cursor =   getContentResolver().query(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, null,null,null,null);
+                while (cursor.moveToNext()){
+                    int titleNum = cursor.getColumnIndex(MediaStore.Images.Media.DISPLAY_NAME);
+                    int dataNum = cursor.getColumnIndex(MediaStore.Images.Media.DATA);
+                    String title = cursor.getString(titleNum);
+                    String data = cursor.getString(dataNum);
+                    int cnt = dirName.length();
+                    if(data.substring(0,30+cnt).equals(str)){
+                        getContentResolver().delete(MediaStore.Images.Media.EXTERNAL_CONTENT_URI ,
+                  MediaStore.Images.Media.DATA +"='/storage/emulated/0/Pictures/"+ dirName +"/"+title+"'",null);
+                    }
+                }
+                File file = new File(str);
+            file.delete();
+        }
 
 
     }
@@ -444,11 +638,9 @@ public class MainActivity extends AppCompatActivity {
         isDestroy = true;
         albumName = dirName;
         @SuppressLint("SimpleDateFormat") String timeStamp = new SimpleDateFormat("yyyyMMddHHmmss").format(new Date());
-        imageName = "SAMPLE_"+timeStamp+".jpg";
+        imageName = "STORAGE_CAMERA_"+timeStamp+".jpg";
         Intent intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
         imageUri = createImageUri(dirName,imageName, "image/jpeg");
-//        intent.setClipData(ClipData.newRawUri("",imageUri));
-//        intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
         intent.putExtra(MediaStore.EXTRA_OUTPUT, imageUri);
         activityResultLauncher.launch(intent);
     }
@@ -457,8 +649,25 @@ public class MainActivity extends AppCompatActivity {
         ContentValues values = new ContentValues();
         values.put(MediaStore.Images.Media.DISPLAY_NAME, fileName); // 확장자가 붙어있는 파일명 ex) sample.jpg
         values.put(MediaStore.Images.Media.MIME_TYPE, mimeType); // ex) image/jpeg
-        if(!dirName.equals("기본경로")){
-            values.put( MediaStore.Images.Media.RELATIVE_PATH, "Pictures/" + dirName );
+
+        //버전이 p이상 일경우
+        if(Build.VERSION.SDK_INT > Build.VERSION_CODES.P) {
+            if(!dirName.equals("기본경로")){
+                values.put( MediaStore.Images.Media.RELATIVE_PATH, "Pictures/" + dirName );
+            }
+        }else{
+            if(!dirName.equals("기본경로")){
+                String filePath = Environment.getExternalStoragePublicDirectory(DIRECTORY_PICTURES) + File.separator + dirName;
+                File file = new File(filePath);
+                if(!file.exists()){
+                    file.mkdir();
+                }else{
+                    Log.e("mkdir","이미 존재");
+                }
+                String imagePath = Environment.getExternalStoragePublicDirectory(DIRECTORY_PICTURES) + File.separator + dirName + File.separator + fileName;
+                values.put( MediaStore.Images.Media.DATA, imagePath );
+
+            }
         }
         Log.e("values",String.valueOf(values));
         Uri uri = getContentResolver().insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values);
@@ -477,10 +686,13 @@ public class MainActivity extends AppCompatActivity {
 
                             onCamera(albumName);
                             Log.e("result","굳");
-                        }else{
+                        }else {
 
-                            Log.e("result","오류");
-                            getContentResolver().delete(imageUri, null, null);
+                            Log.e("result", "오류");
+                            Log.e("result", String.valueOf(imageUri));
+                            if (imageUri != null) {
+                                getContentResolver().delete(imageUri, null, null);
+                            }
                         }
 
 
@@ -520,8 +732,6 @@ public class MainActivity extends AppCompatActivity {
         }
     });
 
-
-
     @Override
     protected void onDestroy() {
         super.onDestroy();
@@ -529,7 +739,6 @@ public class MainActivity extends AppCompatActivity {
             getContentResolver().delete(imageUri, null, null);
 
         }
-        Log.e("last data size", String.valueOf(list_data.size()));
         map.clear();
         if (list_data.size()>0) {
             for (int i = 1; i < list_data.size(); i++) {
@@ -540,13 +749,9 @@ public class MainActivity extends AppCompatActivity {
                     rMap.put("uri",list_data.get(i).getIv_setProfile().toString());
                 }
                 map.put("list_data" + i,rMap);
-                Log.e("rMap",rMap.toString());
-                Log.e("map",map.toString());
             }
         }
-        Log.e("map1",map.toString());
         JSONObject jsonObject = new JSONObject(map);
-        Log.e("jsonObject",jsonObject.toString());
         SharedPreferences sharedPreferences = getSharedPreferences("folderName",0);
         SharedPreferences.Editor editor = sharedPreferences.edit();
         editor.putString("jMap",jsonObject.toString());

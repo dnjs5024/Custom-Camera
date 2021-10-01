@@ -4,10 +4,15 @@
     <option name="filePathToZoomLevelMap">
       <map>
         <entry key="..\:/Users/4679w/AndroidStudioProjects/Custom-Camera/app/src/main/res/drawable/ic_baseline_delete_forever_24.xml" value="0.2171875" />
+        <entry key="..\:/Users/4679w/AndroidStudioProjects/Custom-Camera/app/src/main/res/drawable/ic_launcher_background.xml" value="0.22083333333333333" />
+        <entry key="..\:/Users/4679w/AndroidStudioProjects/Custom-Camera/app/src/main/res/drawable/main_background.xml" value="0.22447916666666667" />
         <entry key="..\:/Users/4679w/AndroidStudioProjects/Custom-Camera/app/src/main/res/layout/activity_main.xml" value="0.20104166666666667" />
         <entry key="..\:/Users/4679w/AndroidStudioProjects/Custom-Camera/app/src/main/res/layout/item_list.xml" value="0.36614583333333334" />
+        <entry key="..\:/Users/4679w/AndroidStudioProjects/Custom-Camera/app/src/main/res/layout/textview_background.xml" value="0.2046875" />
         <entry key="..\:/Users/4679w/AndroidStudioProjects/Custom-Camera/app/src/main/res/menu/bottom_menu.xml" value="0.20104166666666667" />
         <entry key="..\:/Users/4679w/AndroidStudioProjects/Custom-Camera/app/src/main/res/menu/menu.xml" value="0.20104166666666667" />
+        <entry key="..\:/Users/4679w/AndroidStudioProjects/Custom-Camera/app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml" value="0.22447916666666667" />
+        <entry key="..\:/Users/4679w/AndroidStudioProjects/Custom-Camera/app/src/main/res/mipmap-anydpi-v26/ic_launcher_round.xml" value="0.22447916666666667" />
         <entry key="..\:/Users/4679w/AndroidStudioProjects/Custom-Camera/app/src/main/res/xml/file_paths.xml" value="0.2682291666666667" />
       </map>
     </option>
@@ -17,5 +22,12 @@
   </component>
   <component name="ProjectType">
     <option name="id" value="Android" />
+  </component>
+  <component name="SuppressABINotification">
+    <option name="modulesWithSuppressedNotConfigured">
+      <set>
+        <option value="Camera_Exam.app" />
+      </set>
+    </option>
   </component>
 </project>

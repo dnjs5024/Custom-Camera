@@ -61,8 +61,15 @@ public class MainAdapter extends RecyclerView.Adapter<MainAdapter.CustomViewHold
             @Override
             public void onClick(View view) {
                 //MainActivity 메소드를 실행
-                ((MainActivity)MainActivity.mContext).onCamera(arrayList.get(position).getTv_title());
-
+                if(!((MainActivity)MainActivity.mContext).doTouch) {
+                    ((MainActivity) MainActivity.mContext).onCamera(arrayList.get(position).getTv_title());
+                }else{
+                    if(holder.checkBox.isChecked()){
+                        holder.checkBox.setChecked(false);
+                    }else{
+                        holder.checkBox.setChecked(true);
+                    }
+                }
             }
         });
         holder.itemView.setOnLongClickListener(new View.OnLongClickListener() {

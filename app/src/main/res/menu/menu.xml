@@ -12,5 +12,9 @@
         android:id="@+id/menu_2"
         android:title="삭제"
         app:showAsAction="never"/>
+    <item
+        android:id="@+id/menu_3"
+        android:title="수정"
+        app:showAsAction="never"/>
     </group>
 </menu>
